@@ -55,7 +55,7 @@ export const useEeConfig = createSharedComposable(() => {
 
   const blockRowColoring = computed(() => true)
 
-  const blockTableAndFieldPermissions = computed(() => true)
+  const blockTableAndFieldPermissions = computed(() => false)
 
   const blockPrivateBases = computed(() => true)
 

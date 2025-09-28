@@ -53,6 +53,7 @@ import { MapsController } from '~/controllers/maps.controller';
 import { MetaDiffsController } from '~/controllers/meta-diffs.controller';
 import { ModelVisibilitiesController } from '~/controllers/model-visibilities.controller';
 import { NotificationsController } from '~/controllers/notifications.controller';
+import { PermissionsController } from '~/controllers/permissions.controller';
 import { OrgLcenseController } from '~/controllers/org-lcense.controller';
 import { OrgTokensController } from '~/controllers/org-tokens.controller';
 import { OrgUsersController } from '~/controllers/org-users.controller';
@@ -92,6 +93,7 @@ import { MapsService } from '~/services/maps.service';
 import { MetaDiffsService } from '~/services/meta-diffs.service';
 import { ModelVisibilitiesService } from '~/services/model-visibilities.service';
 import { NocoJobsService } from '~/services/noco-jobs.service';
+import { PermissionsService } from '~/services/permissions.service';
 import { NotificationsService } from '~/services/notifications/notifications.service';
 import { OrgLcenseService } from '~/services/org-lcense.service';
 import { OrgTokensEeService } from '~/services/org-tokens-ee.service';
@@ -199,6 +201,7 @@ export const nocoModuleMetadata = {
           MapsController,
           MetaDiffsController,
           ModelVisibilitiesController,
+          PermissionsController,
           OrgLcenseController,
           OrgTokensController,
           OrgUsersController,
@@ -282,6 +285,7 @@ export const nocoModuleMetadata = {
     MapsService,
     MetaDiffsService,
     ModelVisibilitiesService,
+    PermissionsService,
     OrgLcenseService,
     OrgTokensEeService,
     OrgTokensService,

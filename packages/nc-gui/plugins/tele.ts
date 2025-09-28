@@ -95,6 +95,12 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     nuxtApp.provide('e', (e: string, data?: Record<string, any>, rootProps?: Record<string, any>) =>
       tele.emit(e, { data, ...(rootProps ?? {}) }),
     )
+  } else {
+    // Provide mock implementations for EE UI
+    nuxtApp.provide('tele', {
+      emit: () => {},
+    })
+    nuxtApp.provide('e', () => {})
   }
 
   document.body.removeEventListener('click', clickListener, true)

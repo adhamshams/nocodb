@@ -31,8 +31,58 @@ export default class Permission {
   public static async list(
     context: NcContext,
     baseId: string,
-    _ncMeta = Noco.ncMeta,
+    ncMeta = Noco.ncMeta,
   ): Promise<Permission[]> {
-    return [];
+    const permissions = await ncMeta.metaList2(context.workspace_id, baseId, 'nc_permissions', {
+      condition: {
+        base_id: baseId,
+      },
+    });
+
+    // Get subjects for each permission
+    for (const permission of permissions) {
+      const subjects = await ncMeta.metaList2(context.workspace_id, baseId, 'nc_permission_subjects', {
+        condition: {
+          fk_permission_id: permission.id,
+        },
+      });
+      permission.subjects = subjects.map(s => ({
+        type: s.subject_type,
+        id: s.subject_id,
+      }));
+    }
+
+    return permissions.map(p => new Permission(p));
+  }
+
+  public static async getByEntity(
+    context: NcContext,
+    baseId: string,
+    entity: PermissionEntity,
+    entityId: string,
+    ncMeta = Noco.ncMeta,
+  ): Promise<Permission[]> {
+    const permissions = await ncMeta.metaList2(context.workspace_id, baseId, 'nc_permissions', {
+      condition: {
+        base_id: baseId,
+        entity,
+        entity_id: entityId,
+      },
+    });
+
+    // Get subjects for each permission
+    for (const permission of permissions) {
+      const subjects = await ncMeta.metaList2(context.workspace_id, baseId, 'nc_permission_subjects', {
+        condition: {
+          fk_permission_id: permission.id,
+        },
+      });
+      permission.subjects = subjects.map(s => ({
+        type: s.subject_type,
+        id: s.subject_id,
+      }));
+    }
+
+    return permissions.map(p => new Permission(p));
   }
 }

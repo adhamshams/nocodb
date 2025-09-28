@@ -12,7 +12,7 @@ export const usePermissions = () => {
     return {}
   })
 
-  const isTableAndFieldPermissionsEnabled = computed(() => false)
+  const isTableAndFieldPermissionsEnabled = computed(() => true)
 
   // Get permission summary for an entity (returns internal value)
   const getPermissionSummary = (..._args: any[]) => {

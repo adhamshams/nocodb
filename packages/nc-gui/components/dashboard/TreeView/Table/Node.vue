@@ -743,6 +743,7 @@ async function onRename() {
       v-model:visible="isTablePermissionsDialogVisible"
       :table-id="table.id"
       :title="table.title"
+      :base-id="base.id"
     />
     <DashboardTreeViewViewsList v-if="isExpanded" :table-id="table.id" :base-id="base.id" />
   </div>
