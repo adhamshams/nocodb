@@ -4,6 +4,7 @@ import { Permission } from '~/models';
 import { PermissionEntity, PermissionGrantedType, PermissionKey, PermissionRole } from 'nocodb-sdk';
 import Noco from '~/Noco';
 import { nanoid } from 'nanoid';
+import { MetaTable } from '~/utils/globals';
 
 export interface PermissionCreatePayload {
   entity: PermissionEntity;
@@ -55,18 +56,18 @@ export class PermissionsService {
     };
 
     // Insert permission
-    await ncMeta.metaInsert2(context.workspace_id, param.baseId, 'nc_permissions', permissionData);
+    await ncMeta.metaInsert2(context.workspace_id, param.baseId, MetaTable.PERMISSIONS, permissionData);
 
     // Insert subjects if provided
     if (param.permission.subjects && param.permission.subjects.length > 0) {
       for (const subject of param.permission.subjects) {
-        await ncMeta.metaInsert2(context.workspace_id, param.baseId, 'nc_permission_subjects', {
+        await ncMeta.metaInsert2(context.workspace_id, param.baseId, MetaTable.PERMISSION_SUBJECTS, {
           fk_permission_id: permissionId,
           subject_type: subject.type,
           subject_id: subject.id,
           fk_workspace_id: context.workspace_id,
           base_id: param.baseId,
-        });
+        }, true); // ignoreIdGeneration = true
       }
     }
 
@@ -91,35 +92,54 @@ export class PermissionsService {
       enforce_for_automation: param.permission.enforce_for_automation,
     };
 
-    // Update permission
-    await ncMeta.metaUpdate(
-      context.workspace_id,
-      param.baseId,
-      'nc_permissions',
-      updateData,
-      param.permissionId,
-    );
+    try {
+      // Update permission
+      await ncMeta.metaUpdate(
+        context.workspace_id,
+        param.baseId,
+        MetaTable.PERMISSIONS,
+        updateData,
+        param.permissionId,
+      );
+      
+    } catch (error) {
+      console.error('❌ Permission update failed:', error);
+      throw error;
+    }
 
     // Update subjects if provided
     if (param.permission.subjects !== undefined) {
-      // Delete existing subjects
-      await ncMeta.metaDelete(
-        context.workspace_id,
-        param.baseId,
-        'nc_permission_subjects',
-        { fk_permission_id: param.permissionId },
-      );
+      try {
+        await ncMeta.metaDelete(
+          context.workspace_id,
+          param.baseId,
+          MetaTable.PERMISSION_SUBJECTS,
+          { fk_permission_id: param.permissionId },
+        );
+      } catch (error) {
+        console.error('❌ Delete subjects failed:', error);
+        throw error;
+      }
 
       // Insert new subjects
       if (param.permission.subjects.length > 0) {
-        for (const subject of param.permission.subjects) {
-          await ncMeta.metaInsert2(context.workspace_id, param.baseId, 'nc_permission_subjects', {
-            fk_permission_id: param.permissionId,
-            subject_type: subject.type,
-            subject_id: subject.id,
-            fk_workspace_id: context.workspace_id,
-            base_id: param.baseId,
-          });
+        
+        for (let i = 0; i < param.permission.subjects.length; i++) {
+          const subject = param.permission.subjects[i];
+          
+          try {
+            await ncMeta.metaInsert2(context.workspace_id, param.baseId, MetaTable.PERMISSION_SUBJECTS, {
+              fk_permission_id: param.permissionId,
+              subject_type: subject.type,
+              subject_id: subject.id,
+              fk_workspace_id: context.workspace_id,
+              base_id: param.baseId,
+            }, true); // ignoreIdGeneration = true
+            console.log(`✅ Subject ${i + 1} inserted successfully`);
+          } catch (error) {
+            console.error(`❌ Failed to insert subject ${i + 1}:`, error);
+            throw error;
+          }
         }
       }
     }
@@ -141,7 +161,7 @@ export class PermissionsService {
     await ncMeta.metaDelete(
       context.workspace_id,
       param.baseId,
-      'nc_permission_subjects',
+      MetaTable.PERMISSION_SUBJECTS,
       { fk_permission_id: param.permissionId },
     );
 
@@ -149,7 +169,7 @@ export class PermissionsService {
     await ncMeta.metaDelete(
       context.workspace_id,
       param.baseId,
-      'nc_permissions',
+      MetaTable.PERMISSIONS,
       param.permissionId,
     );
 
@@ -164,7 +184,7 @@ export class PermissionsService {
     },
     ncMeta = Noco.ncMeta,
   ) {
-    const permissions = await ncMeta.metaList2(context.workspace_id, param.baseId, 'nc_permissions', {
+    const permissions = await ncMeta.metaList2(context.workspace_id, param.baseId, MetaTable.PERMISSIONS, {
       condition: {
         base_id: param.baseId,
         entity: PermissionEntity.TABLE,
@@ -174,7 +194,7 @@ export class PermissionsService {
 
     // Get subjects for each permission
     for (const permission of permissions) {
-      const subjects = await ncMeta.metaList2(context.workspace_id, param.baseId, 'nc_permission_subjects', {
+      const subjects = await ncMeta.metaList2(context.workspace_id, param.baseId, MetaTable.PERMISSION_SUBJECTS, {
         condition: {
           fk_permission_id: permission.id,
         },
@@ -219,9 +239,15 @@ export class PermissionsService {
 
     // Process each permission type
     for (const [permissionKey, permissionData] of Object.entries(param.permissions)) {
+      console.log(`🔍 Processing permission: ${permissionKey}`, {
+        granted_type: permissionData.granted_type,
+        subjects: permissionData.subjects
+      });
+      
       const existingPermission = existingPermissionsMap.get(permissionKey);
 
       if (existingPermission) {
+        console.log(`🔍 Updating existing permission: ${permissionKey} (ID: ${existingPermission.id})`);
         // Update existing permission
         const result = await this.updatePermission(context, {
           permissionId: existingPermission.id,
@@ -231,7 +257,9 @@ export class PermissionsService {
           req: param.req,
         }, ncMeta);
         results.push(result);
+        console.log(`✅ Updated permission: ${permissionKey}`);
       } else {
+        console.log(`🔍 Creating new permission: ${permissionKey}`);
         // Create new permission
         const result = await this.createPermission(context, {
           baseId: param.baseId,
@@ -245,6 +273,7 @@ export class PermissionsService {
           req: param.req,
         }, ncMeta);
         results.push(result);
+        console.log(`✅ Created permission: ${permissionKey}`);
       }
     }
 

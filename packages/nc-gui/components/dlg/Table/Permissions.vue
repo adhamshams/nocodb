@@ -245,7 +245,7 @@ const loadPermissions = async () => {
           let frontendValue: PermissionOptionValue
           let subjects: string[] = []
           
-          if (permission.granted_type === 'specific_users') {
+          if (permission.granted_type === 'user') {
             frontendValue = 'specific_users'
             subjects = permission.subjects?.map(s => s.id) || []
           } else if (permission.granted_type === 'role') {
@@ -265,7 +265,7 @@ const loadPermissions = async () => {
           }
           
           permissions.value[permissionKey] = frontendValue
-          selectedUsers.value[permissionKey] = subjects
+          selectedUsers.value[permissionKey] = [...new Set(permission.subjects?.map(s => s.id) || [])]
         }
       }
     }
@@ -305,7 +305,7 @@ const toggleUserSelection = (permissionKey: PermissionKey, userId: string) => {
   const index = users.indexOf(userId)
   if (index > -1) {
     users.splice(index, 1)
-  } else {
+  } else if (!users.includes(userId)) { // Extra safety check
     users.push(userId)
   }
 }
@@ -340,11 +340,13 @@ const onSave = async () => {
 
       let grantedType = permissionValue
       let grantedRole: string | undefined
-      let subjects: Array<{ type: 'user' | 'group'; id: string }> | undefined
+      let subjects: Array<{ type: 'user' | 'group'; id: string }> = []
 
       if (permissionValue === 'specific_users') {
         grantedType = 'specific_users'
-        subjects = selectedUserIds.map(userId => ({
+        // Deduplicate user IDs before creating subjects
+        const uniqueUserIds = [...new Set(selectedUserIds)]
+        subjects = uniqueUserIds.map(userId => ({
           type: 'user' as const,
           id: userId
         }))
@@ -510,17 +512,7 @@ const onSave = async () => {
                     <div class="font-medium text-gray-900">{{ getUserDisplayName(user) }}</div>
                     <div class="text-sm text-gray-500">{{ user.email }}</div>
                   </div>
-                  
-                  <div class="flex items-center space-x-2">
-                    <GeneralIcon 
-                      :icon="getUserRole(user) === 'Owner' ? 'role_owner' : getUserRole(user) === 'Creator' ? 'role_creator' : 'role_editor'" 
-                      class="w-4 h-4"
-                      :class="getUserRole(user) === 'Owner' ? 'text-purple-500' : getUserRole(user) === 'Creator' ? 'text-orange-500' : 'text-blue-500'"
-                    />
-                    <span v-if="['Owner', 'Creator'].includes(getUserRole(user))" class="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded">
-                      {{ getUserRole(user) }}
-                    </span>
-                  </div>
+                
                 </div>
               </div>
               
