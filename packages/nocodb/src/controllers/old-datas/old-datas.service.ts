@@ -6,7 +6,7 @@ import getAst from '~/helpers/getAst';
 import { NcError } from '~/helpers/catchError';
 import { Base, Model, Source, View } from '~/models';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
-import { validateTableCreatePermission, validateTableDeletePermission } from '~/utils/tablePermissions';
+import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission } from '~/utils/tablePermissions';
 
 @Injectable()
 export class OldDatasService {
@@ -123,6 +123,10 @@ export class OldDatasService {
       context,
       param,
     );
+
+    // Check table update permissions before proceeding
+    await validateTableUpdatePermission(context, model.id, param.cookie);
+
     const source = await Source.get(context, model.source_id);
 
     const baseModel = await Model.getBaseModelSQL(context, {

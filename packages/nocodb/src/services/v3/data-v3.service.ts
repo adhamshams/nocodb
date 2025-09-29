@@ -27,7 +27,7 @@ import {
   V3_INSERT_LIMIT,
 } from '~/constants';
 import { processConcurrently, reuseOrSave } from '~/utils';
-import { validateTableCreatePermission, validateTableDeletePermission } from '~/utils/tablePermissions';
+import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission } from '~/utils/tablePermissions';
 
 interface ModelInfo {
   model: Model;
@@ -666,6 +666,9 @@ export class DataV3Service {
       context,
       param.modelId,
     );
+
+    // Check table update permissions before proceeding
+    await validateTableUpdatePermission(context, model.id, param.cookie);
 
     const ltarColumns = columns.filter(
       (col) => col.uidt === UITypes.LinkToAnotherRecord,

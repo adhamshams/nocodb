@@ -14,7 +14,7 @@ import { Base, Column, Model, Source, View } from '~/models';
 import { nocoExecute } from '~/utils';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
 import { QUERY_STRING_FIELD_ID_ON_RESULT } from '~/constants';
-import { validateTableCreatePermission, validateTableDeletePermission } from '~/utils/tablePermissions';
+import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission } from '~/utils/tablePermissions';
 
 @Injectable()
 export class DatasService {
@@ -171,6 +171,10 @@ export class DatasService {
     },
   ) {
     const { model, view } = await getViewAndModelByAliasOrId(context, param);
+
+    // Check table update permissions before proceeding
+    await validateTableUpdatePermission(context, model.id, param.cookie);
+
     const source = await Source.get(context, model.source_id);
 
     const baseModel = await Model.getBaseModelSQL(context, {
@@ -955,6 +959,9 @@ export class DatasService {
       id: param.viewId,
     });
     if (!model) NcError.tableNotFound(param.viewId);
+
+    // Check table update permissions before proceeding
+    await validateTableUpdatePermission(context, model.id, param.cookie);
 
     const source = await Source.get(context, model.source_id);
 

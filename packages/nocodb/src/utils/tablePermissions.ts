@@ -246,3 +246,30 @@ export async function validateTableDeletePermission(
     );
   }
 }
+
+/**
+ * Check if user has table record update permission
+ * Reuses the same permission logic as CREATE for consistency
+ */
+export async function checkTableUpdatePermission(
+  context: NcContext,
+  tableId: string,
+  userBaseRoles: Record<string, boolean>,
+  userId?: string
+): Promise<boolean> {
+  // Reuse the CREATE permission check for updates
+  return await checkTableCreatePermission(context, tableId, userBaseRoles, userId);
+}
+
+/**
+ * Validate table record update permission (throws error if not allowed)
+ * Reuses the same permission logic as CREATE for consistency
+ */
+export async function validateTableUpdatePermission(
+  context: NcContext,
+  tableId: string,
+  req: NcRequest
+): Promise<void> {
+  // Reuse the CREATE permission validation for updates
+  await validateTableCreatePermission(context, tableId, req);
+}
