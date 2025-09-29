@@ -1720,16 +1720,24 @@ export function useInfiniteData(args: {
         ].includes(c.uidt),
     )
 
-    if (row.rowMeta.new) {
-      data = await insertRow(row, ltarState, args, false, true, beforeRowID, path)
-    } else if (property) {
-      if (cachedRow) {
-        fieldsToOverwrite?.reduce((acc, col) => {
-          if (!ncIsUndefined(cachedRow.row[col.title!])) acc[col.title!] = cachedRow.row[col.title!]
-          return acc
-        }, row.row)
+    try {
+      if (row.rowMeta.new) {
+        data = await insertRow(row, ltarState, args, false, true, beforeRowID, path)
+      } else if (property) {
+        if (cachedRow) {
+          fieldsToOverwrite?.reduce((acc, col) => {
+            if (!ncIsUndefined(cachedRow.row[col.title!])) acc[col.title!] = cachedRow.row[col.title!]
+            return acc
+          }, row.row)
+        }
+        data = await updateRowProperty(row, property, args, false, path)
       }
-      data = await updateRowProperty(row, property, args, false, path)
+    } catch (error: any) {
+      // If record creation fails and it's a new row, remove it from the cache
+      if (row.rowMeta.new) {
+        removeRowIfNew(row, path)
+      }
+      throw error
     }
 
     const isValidationFailed = !validateRowFilters(

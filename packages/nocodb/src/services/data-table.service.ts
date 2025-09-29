@@ -17,6 +17,7 @@ import getAst from '~/helpers/getAst';
 import { PagedResponseImpl } from '~/helpers/PagedResponse';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
 import { dataWrapper } from '~/helpers/dbHelpers';
+import { validateTableCreatePermission, validateTableDeletePermission } from '~/utils/tablePermissions';
 
 @Injectable()
 export class DataTableService {
@@ -139,6 +140,10 @@ export class DataTableService {
     },
   ) {
     const { model, view } = await this.getModelAndView(context, param);
+    
+    // Check table create permissions before proceeding
+    await validateTableCreatePermission(context, model.id, param.cookie);
+    
     const source = await Source.get(context, model.source_id);
 
     const baseModel = await Model.getBaseModelSQL(context, {
@@ -250,6 +255,9 @@ export class DataTableService {
     },
   ) {
     const { model, view } = await this.getModelAndView(context, param);
+    
+    // Check table delete permissions before proceeding
+    await validateTableDeletePermission(context, model.id, param.cookie);
 
     await this.checkForDuplicateRow(context, { rows: param.body, model });
 

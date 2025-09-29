@@ -320,13 +320,21 @@ export function useData(args: {
     // if new row and save is in progress then wait until the save is complete
     await until(() => !(row.rowMeta?.new && row.rowMeta?.saving)).toMatch((v) => v)
 
-    if (row.rowMeta.new) {
-      return await insertRow(row, ltarState, args)
-    } else {
-      // if the field name is missing skip update
-      if (property) {
-        await updateRowProperty(row, property, args)
+    try {
+      if (row.rowMeta.new) {
+        return await insertRow(row, ltarState, args)
+      } else {
+        // if the field name is missing skip update
+        if (property) {
+          await updateRowProperty(row, property, args)
+        }
       }
+    } catch (error: any) {
+      // If record creation fails and it's a new row, remove it from the cache
+      if (row.rowMeta.new) {
+        removeRowIfNew(row)
+      }
+      throw error
     }
   }
 

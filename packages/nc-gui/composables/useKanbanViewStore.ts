@@ -525,10 +525,26 @@ const [useProvideKanbanViewStore, useKanbanViewStore] = useInjectionState(
     }
 
     async function updateOrSaveRow(row: Row) {
-      if (row.rowMeta.new) {
-        await insertRow(row.row, formattedData.value.get(row.row.title!)!.indexOf(row))
-      } else {
-        await updateRowProperty(row, groupingField.value)
+      try {
+        if (row.rowMeta.new) {
+          await insertRow(row.row, formattedData.value.get(row.row.title!)!.indexOf(row))
+        } else {
+          await updateRowProperty(row, groupingField.value)
+        }
+      } catch (error: any) {
+        // If record creation fails and it's a new row, remove it from the cache
+        if (row.rowMeta.new) {
+          // For Kanban view, we need to remove the row from the appropriate stack
+          const stackTitle = row.row[groupingField.value] || null
+          const stackData = formattedData.value.get(stackTitle)
+          if (stackData) {
+            const rowIndex = stackData.indexOf(row)
+            if (rowIndex > -1) {
+              stackData.splice(rowIndex, 1)
+            }
+          }
+        }
+        throw error
       }
     }
 

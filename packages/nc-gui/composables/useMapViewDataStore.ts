@@ -129,6 +129,12 @@ const [useProvideMapViewStore, useMapViewStore] = useInjectionState(
         return insertedData
       } catch (error: any) {
         message.error(await extractSdkResponseErrorMsg(error))
+        // If record creation fails, remove it from the cache
+        const rowIndex = formattedData.value.indexOf(currentRow)
+        if (rowIndex > -1) {
+          formattedData.value.splice(rowIndex, 1)
+        }
+        throw error
       } finally {
         if (currentRow.rowMeta) currentRow.rowMeta.saving = false
       }

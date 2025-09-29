@@ -27,6 +27,7 @@ import {
   V3_INSERT_LIMIT,
 } from '~/constants';
 import { processConcurrently, reuseOrSave } from '~/utils';
+import { validateTableCreatePermission, validateTableDeletePermission } from '~/utils/tablePermissions';
 
 interface ModelInfo {
   model: Model;
@@ -503,6 +504,9 @@ export class DataV3Service {
       param.modelId,
     );
 
+    // Check table create permissions before proceeding
+    await validateTableCreatePermission(context, model.id, param.cookie);
+
     const ltarColumns = columns.filter(
       (col) => col.uidt === UITypes.LinkToAnotherRecord,
     );
@@ -627,7 +631,10 @@ export class DataV3Service {
         : []),
     ];
 
-    const { primaryKey } = await this.getModelInfo(context, param.modelId);
+    const { model, primaryKey } = await this.getModelInfo(context, param.modelId);
+    
+    // Check table delete permissions before proceeding
+    await validateTableDeletePermission(context, model.id, param.cookie);
 
     // Transform the request body to match internal format
     const recordIds = param.body.map((record) => ({

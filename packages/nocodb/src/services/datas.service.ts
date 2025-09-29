@@ -14,6 +14,7 @@ import { Base, Column, Model, Source, View } from '~/models';
 import { nocoExecute } from '~/utils';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
 import { QUERY_STRING_FIELD_ID_ON_RESULT } from '~/constants';
+import { validateTableCreatePermission, validateTableDeletePermission } from '~/utils/tablePermissions';
 
 @Injectable()
 export class DatasService {
@@ -139,6 +140,9 @@ export class DatasService {
     },
   ) {
     const { model, view } = await getViewAndModelByAliasOrId(context, param);
+    
+    // Check table create permissions before proceeding
+    await validateTableCreatePermission(context, model.id, param.cookie);
 
     const source = await Source.get(context, model.source_id);
 
@@ -190,6 +194,10 @@ export class DatasService {
     param: PathParams & { rowId: string; cookie: any },
   ) {
     const { model, view } = await getViewAndModelByAliasOrId(context, param);
+    
+    // Check table delete permissions before proceeding
+    await validateTableDeletePermission(context, model.id, param.cookie);
+    
     const source = await Source.get(context, model.source_id);
     const baseModel = await Model.getBaseModelSQL(context, {
       id: model.id,
@@ -919,6 +927,9 @@ export class DatasService {
       id: param.viewId,
     });
     if (!model) return NcError.tableNotFound(param.viewId);
+    
+    // Check table create permissions before proceeding
+    await validateTableCreatePermission(context, model.id, param.cookie);
 
     const source = await Source.get(context, model.source_id);
 
@@ -973,6 +984,9 @@ export class DatasService {
       id: param.viewId,
     });
     if (!model) NcError.tableNotFound(param.viewId);
+    
+    // Check table delete permissions before proceeding
+    await validateTableDeletePermission(context, model.id, param.cookie);
 
     const source = await Source.get(context, model.source_id);
 
