@@ -54,6 +54,7 @@ export class DataAliasController {
       getHiddenColumns: getHiddenColumns === 'true',
       includeSortAndFilterColumns: includeSortAndFilterColumns === 'true',
       includeRowColorColumns: req.query.include_row_color === 'true',
+      cookie: req,
     });
     const elapsedMilliSeconds = parseHrtimeToMilliSeconds(
       process.hrtime(startTime),
@@ -250,6 +251,7 @@ export class DataAliasController {
       query: req.query,
       disableOptimization: opt === 'false',
       getHiddenColumn: getHiddenColumn === 'true',
+      cookie: req,
     });
   }
 

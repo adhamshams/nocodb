@@ -14,7 +14,7 @@ import { Base, Column, Model, Source, View } from '~/models';
 import { nocoExecute } from '~/utils';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
 import { QUERY_STRING_FIELD_ID_ON_RESULT } from '~/constants';
-import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission } from '~/utils/tablePermissions';
+import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission, validateTableViewPermission } from '~/utils/tablePermissions';
 
 @Injectable()
 export class DatasService {
@@ -34,6 +34,7 @@ export class DatasService {
       includeSortAndFilterColumns?: boolean;
       includeRowColorColumns?: boolean;
       apiVersion?: NcApiVersion;
+      cookie?: any;
     },
   ) {
     let { model, view } = param as { view?: View; model?: Model };
@@ -45,6 +46,11 @@ export class DatasService {
       );
       model = modelAndView.model;
       view = modelAndView.view;
+    }
+
+    // Check table view permissions before proceeding
+    if (param.cookie) {
+      await validateTableViewPermission(context, model.id, param.cookie);
     }
 
     // check for linkColumnId query param and handle it
@@ -424,9 +430,15 @@ export class DatasService {
       rowId: string;
       disableOptimization?: boolean;
       getHiddenColumn?: boolean;
+      cookie?: any;
     },
   ) {
     const { model, view } = await getViewAndModelByAliasOrId(context, param);
+
+    // Check table view permissions before proceeding
+    if (param.cookie) {
+      await validateTableViewPermission(context, model.id, param.cookie);
+    }
 
     const source = await Source.get(context, model.source_id);
 
@@ -547,7 +559,7 @@ export class DatasService {
 
   async dataListByViewId(
     context: NcContext,
-    param: { viewId: string; query: any; apiVersion?: NcApiVersion },
+    param: { viewId: string; query: any; apiVersion?: NcApiVersion; cookie?: any },
   ) {
     const view = await View.get(context, param.viewId);
 
@@ -556,6 +568,11 @@ export class DatasService {
     });
 
     if (!model) NcError.tableNotFound(view?.fk_model_id || param.viewId);
+
+    // Check table view permissions before proceeding
+    if (param.cookie) {
+      await validateTableViewPermission(context, model.id, param.cookie);
+    }
 
     return await this.getDataList(context, {
       model,
@@ -890,13 +907,18 @@ export class DatasService {
 
   async dataReadByViewId(
     context: NcContext,
-    param: { viewId: string; rowId: string; query: any },
+    param: { viewId: string; rowId: string; query: any; cookie?: any },
   ) {
     try {
       const model = await Model.getByIdOrName(context, {
         id: param.viewId,
       });
       if (!model) NcError.tableNotFound(param.viewId);
+
+      // Check table view permissions before proceeding
+      if (param.cookie) {
+        await validateTableViewPermission(context, model.id, param.cookie);
+      }
 
       const source = await Source.get(context, model.source_id);
 

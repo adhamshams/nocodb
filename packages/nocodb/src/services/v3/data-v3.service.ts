@@ -27,7 +27,7 @@ import {
   V3_INSERT_LIMIT,
 } from '~/constants';
 import { processConcurrently, reuseOrSave } from '~/utils';
-import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission } from '~/utils/tablePermissions';
+import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission, validateTableViewPermission } from '~/utils/tablePermissions';
 
 interface ModelInfo {
   model: Model;
@@ -314,6 +314,7 @@ export class DataV3Service {
         limit: +param.query?.limit || +param.query?.pageSize,
       },
       apiVersion: NcApiVersion.V3,
+      cookie: param.req,
     });
 
     const { primaryKey, primaryKeys, columns } = await this.getModelInfo(
@@ -937,6 +938,7 @@ export class DataV3Service {
     const result = await this.dataTableService.dataRead(context, {
       ...(param as Omit<DataReadParams, 'req'>),
       apiVersion: NcApiVersion.V3,
+      cookie: param.req,
     });
 
     // Transform the response to match the new format

@@ -32,6 +32,7 @@ export class DatasController {
     return await this.datasService.dataListByViewId(context, {
       viewId: viewId,
       query: req.query,
+      cookie: req,
     });
   }
 
@@ -132,6 +133,7 @@ export class DatasController {
       viewId,
       rowId,
       query: req.query,
+      cookie: req,
     });
   }
 

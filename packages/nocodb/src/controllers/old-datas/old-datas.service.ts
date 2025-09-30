@@ -6,15 +6,24 @@ import getAst from '~/helpers/getAst';
 import { NcError } from '~/helpers/catchError';
 import { Base, Model, Source, View } from '~/models';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
-import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission } from '~/utils/tablePermissions';
+import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission, validateTableViewPermission } from '~/utils/tablePermissions';
 
 @Injectable()
 export class OldDatasService {
-  async dataList(context: NcContext, param: OldPathParams & { query: any }) {
+  async dataList(
+    context: NcContext, 
+    param: OldPathParams & { query: any; cookie?: any }
+  ) {
     const { model, view } = await this.getViewAndModelFromRequest(
       context,
       param,
     );
+    
+    // Check table view permissions before proceeding
+    if (param.cookie) {
+      await validateTableViewPermission(context, model.id, param.cookie);
+    }
+    
     const source = await Source.get(context, model.source_id);
 
     const baseModel = await Model.getBaseModelSQL(context, {
@@ -86,12 +95,17 @@ export class OldDatasService {
 
   async dataRead(
     context: NcContext,
-    param: OldPathParams & { query: any; rowId: string },
+    param: OldPathParams & { query: any; rowId: string; cookie?: any },
   ) {
     const { model, view } = await this.getViewAndModelFromRequest(
       context,
       param,
     );
+
+    // Check table view permissions before proceeding
+    if (param.cookie) {
+      await validateTableViewPermission(context, model.id, param.cookie);
+    }
 
     const source = await Source.get(context, model.source_id);
 

@@ -43,6 +43,7 @@ const baseId = computed(() => {
 
 // Table permissions that we support
 const tablePermissions = [
+  'TABLE_RECORD_VIEW',
   'TABLE_RECORD_ADD',
   'TABLE_RECORD_DELETE'
 ] as PermissionKey[]
@@ -52,12 +53,14 @@ const isLoadingUsers = ref(false)
 
 // Default permission data - matching documentation defaults
 const permissions = ref<Record<PermissionKey, PermissionOptionValue>>({
+  TABLE_RECORD_VIEW: 'viewers_and_up' as PermissionOptionValue,
   TABLE_RECORD_ADD: 'editors_and_up' as PermissionOptionValue,
   TABLE_RECORD_DELETE: 'editors_and_up' as PermissionOptionValue,
 })
 
 // Selected users for specific permissions
 const selectedUsers = ref<Record<PermissionKey, string[]>>({
+  TABLE_RECORD_VIEW: [],
   TABLE_RECORD_ADD: [],
   TABLE_RECORD_DELETE: [],
 })
@@ -228,10 +231,12 @@ const loadPermissions = async () => {
     
     // Reset to defaults first
     permissions.value = {
+      TABLE_RECORD_VIEW: 'viewers_and_up' as PermissionOptionValue,
       TABLE_RECORD_ADD: 'editors_and_up' as PermissionOptionValue,
       TABLE_RECORD_DELETE: 'editors_and_up' as PermissionOptionValue,
     }
     selectedUsers.value = {
+      TABLE_RECORD_VIEW: [],
       TABLE_RECORD_ADD: [],
       TABLE_RECORD_DELETE: [],
     }

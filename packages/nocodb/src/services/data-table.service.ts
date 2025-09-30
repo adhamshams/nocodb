@@ -17,7 +17,7 @@ import getAst from '~/helpers/getAst';
 import { PagedResponseImpl } from '~/helpers/PagedResponse';
 import NcConnectionMgrv2 from '~/utils/common/NcConnectionMgrv2';
 import { dataWrapper } from '~/helpers/dbHelpers';
-import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission } from '~/utils/tablePermissions';
+import { validateTableCreatePermission, validateTableDeletePermission, validateTableUpdatePermission, validateTableViewPermission } from '~/utils/tablePermissions';
 
 @Injectable()
 export class DataTableService {
@@ -33,6 +33,7 @@ export class DataTableService {
       ignorePagination?: boolean;
       apiVersion?: NcApiVersion;
       includeSortAndFilterColumns?: boolean;
+      cookie?: any;
     },
   ) {
     const { modelId, viewId, baseId, ...rest } = param;
@@ -41,6 +42,12 @@ export class DataTableService {
       viewId,
       baseId,
     });
+    
+    // Check table view permissions before proceeding
+    if (param.cookie) {
+      await validateTableViewPermission(context, model.id, param.cookie);
+    }
+    
     return await this.datasService.dataList(context, {
       ...rest,
       model,
@@ -59,9 +66,15 @@ export class DataTableService {
       viewId?: string;
       query: any;
       apiVersion?: NcApiVersion;
+      cookie?: any;
     },
   ) {
     const { model, view } = await this.getModelAndView(context, param);
+
+    // Check table view permissions before proceeding
+    if (param.cookie) {
+      await validateTableViewPermission(context, model.id, param.cookie);
+    }
 
     const source = await Source.get(context, model.source_id);
 

@@ -44,6 +44,7 @@ export class DataTableController {
       modelId: modelId,
       viewId: viewId,
       includeSortAndFilterColumns: includeSortAndFilterColumns === 'true',
+      cookie: req,
     });
     const elapsedSeconds = parseHrtimeToMilliSeconds(process.hrtime(startTime));
     res.setHeader('xc-db-response', elapsedSeconds);
@@ -183,6 +184,7 @@ export class DataTableController {
       rowId: rowId,
       query: req.query,
       viewId,
+      cookie: req,
     });
   }
 

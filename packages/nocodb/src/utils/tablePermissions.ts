@@ -273,3 +273,101 @@ export async function validateTableUpdatePermission(
   // Reuse the CREATE permission validation for updates
   await validateTableCreatePermission(context, tableId, req);
 }
+
+/**
+ * Check if a user has permission to view records in a table
+ * @param context - NocoDB context
+ * @param tableId - Table ID to check permissions for
+ * @param userBaseRoles - User's base roles from req.user.base_roles
+ * @param userId - User ID for specific user permissions
+ * @returns Promise<boolean> - true if user has view permission, false otherwise
+ */
+export async function checkTableViewPermission(
+  context: NcContext,
+  tableId: string,
+  userBaseRoles: Record<string, boolean>,
+  userId?: string
+): Promise<boolean> {
+  try {
+    // Get table permissions for VIEW operation
+    const tablePermissions = await Permission.getByEntity(
+      context,
+      context.base_id,
+      PermissionEntity.TABLE,
+      tableId
+    );
+
+    // Find VIEW permission specifically
+    const viewPermission = tablePermissions.find(
+      (p) => p.permission === PermissionKey.TABLE_RECORD_VIEW
+    );
+
+    // If no specific VIEW permission is set, use default behavior (Viewers & up can view)
+    if (!viewPermission) {
+      const userRolePower = getUserRolePower(userBaseRoles);
+      return userRolePower >= ROLE_POWER[ProjectRoles.VIEWER];
+    }
+
+    // Check permission based on granted type
+    switch (viewPermission.granted_type) {
+      case PermissionGrantedType.NOBODY:
+        // Nobody can view records
+        return false;
+
+      case PermissionGrantedType.ROLE:
+        // Role-based permission (e.g., "Editors & up", "Creators & up", "Viewers & up")
+        const requiredRolePower = ROLE_POWER[viewPermission.granted_role] || ROLE_POWER[ProjectRoles.VIEWER];
+        const userRolePower = getUserRolePower(userBaseRoles);
+        return userRolePower >= requiredRolePower;
+
+      case PermissionGrantedType.USER:
+        // Specific users only
+        if (!userId || !viewPermission.subjects) {
+          return false;
+        }
+        return viewPermission.subjects.some(
+          (subject) => subject.type === 'user' && subject.id === userId
+        );
+
+      default:
+        // Default to viewer permission if permission type is unknown
+        const defaultUserRolePower = getUserRolePower(userBaseRoles);
+        return defaultUserRolePower >= ROLE_POWER[ProjectRoles.VIEWER];
+    }
+  } catch (error) {
+    // If there's an error fetching permissions, default to viewer permission for safety
+    console.warn('Error checking table view permission:', error);
+    const userRolePower = getUserRolePower(userBaseRoles);
+    return userRolePower >= ROLE_POWER[ProjectRoles.VIEWER];
+  }
+}
+
+/**
+ * Validate that a user has permission to view records in a table, throwing an error if not
+ * @param context - NocoDB context
+ * @param tableId - Table ID to check permissions for  
+ * @param req - Request object containing user information
+ * @throws NcError.forbidden if user doesn't have permission
+ */
+export async function validateTableViewPermission(
+  context: NcContext,
+  tableId: string,
+  req: NcRequest
+): Promise<void> {
+  const userBaseRoles = req.user?.base_roles || {};
+  const userId = req.user?.id;
+
+  const hasPermission = await checkTableViewPermission(
+    context,
+    tableId,
+    userBaseRoles,
+    userId
+  );
+
+  if (!hasPermission) {
+    const userRole = getUserHighestRole(userBaseRoles);
+    NcError.forbidden(
+      `Access denied: '${userRole}' role does not have permission to view records in this table`
+    );
+  }
+}

@@ -37,6 +37,7 @@ export class OldDatasController {
         query: req.query,
         baseId: baseId,
         tableName: tableName,
+        cookie: req,
       }),
     );
   }
@@ -96,6 +97,7 @@ export class OldDatasController {
         tableName: tableName,
         rowId: rowId,
         query: req.query,
+        cookie: req,
       }),
     );
   }

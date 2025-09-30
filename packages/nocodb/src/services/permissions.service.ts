@@ -247,7 +247,6 @@ export class PermissionsService {
       const existingPermission = existingPermissionsMap.get(permissionKey);
 
       if (existingPermission) {
-        console.log(`🔍 Updating existing permission: ${permissionKey} (ID: ${existingPermission.id})`);
         // Update existing permission
         const result = await this.updatePermission(context, {
           permissionId: existingPermission.id,
@@ -257,9 +256,7 @@ export class PermissionsService {
           req: param.req,
         }, ncMeta);
         results.push(result);
-        console.log(`✅ Updated permission: ${permissionKey}`);
       } else {
-        console.log(`🔍 Creating new permission: ${permissionKey}`);
         // Create new permission
         const result = await this.createPermission(context, {
           baseId: param.baseId,
@@ -273,7 +270,6 @@ export class PermissionsService {
           req: param.req,
         }, ncMeta);
         results.push(result);
-        console.log(`✅ Created permission: ${permissionKey}`);
       }
     }
 
