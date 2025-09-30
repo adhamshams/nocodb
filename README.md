@@ -45,7 +45,7 @@ For each permission type, you can configure:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/mo4tech/nocodb.git
 cd nocodb
 
 # Install all dependencies including SDK build
@@ -74,15 +74,6 @@ pnpm start:frontend
 
 # Start backend only  
 pnpm start:backend
-
-# Build all packages
-pnpm build
-
-# Run tests
-pnpm test
-
-# Lint code
-pnpm lint
 ```
 
 ## 📋 Permission System Usage
@@ -198,7 +189,3 @@ This project maintains the same license as the original NocoDB project - AGPLv3.
 - Original NocoDB team for the excellent foundation
 - Community contributors who helped shape the permission system
 - Users who provided feedback on access control requirements
-
----
-
-**Ready to get started?** Run `pnpm bootstrap` and then `pnpm start:frontend` to begin developing! 🚀
